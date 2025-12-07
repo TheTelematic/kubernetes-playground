@@ -28,9 +28,9 @@ def get_pods_running(label_selector: str = LABEL_SELECTOR, namespace: str = NAME
     return len(list(filter(lambda i: i.status.phase == "Running", result.items)))
 
 
-def get_hpa(name: str = HPA_NAME, namespace: str = NAMESPACE) -> (int, int, float):
+def get_hpa(name: str = HPA_NAME, namespace: str = NAMESPACE) -> (int, int, float | None):
     result = k8s_autoscaling.read_namespaced_horizontal_pod_autoscaler(name, namespace)
-    return result.spec.min_replicas, result.spec.max_replicas, result.status.current_cpu_utilization_percentage or 0
+    return result.spec.min_replicas, result.spec.max_replicas, result.status.current_cpu_utilization_percentage
 
 
 def decrease_max_pods(name: str = HPA_NAME, namespace: str = NAMESPACE):
@@ -93,13 +93,13 @@ def blink_leds():
                     led_to_blink_on_increase = led
 
         time.sleep(1)
-        if current_cpu_utilization_percentage < 10 and not timestamp_to_decrease_at:
+        if current_cpu_utilization_percentage and current_cpu_utilization_percentage < 10 and not timestamp_to_decrease_at:
             print("Starting to decrease max pods...")
             timestamp_to_decrease_at = datetime.now()
             if led_to_blink_on_decrease:
                 thread, event = blink_led(led_to_blink_on_decrease)
 
-        elif current_cpu_utilization_percentage > 90 and not timestamp_to_increase_at:
+        elif current_cpu_utilization_percentage and current_cpu_utilization_percentage > 90 and not timestamp_to_increase_at:
             print("Starting to increase max pods...")
             timestamp_to_increase_at = datetime.now()
             if led_to_blink_on_increase:
