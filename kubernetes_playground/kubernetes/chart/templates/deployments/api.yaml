@@ -24,7 +24,7 @@ spec:
             - /bin/sh
             - -c
           args:
-            - uvicorn kubernetes_playground.main:app --host 0.0.0.0 --port 8000
+            - uvicorn kubernetes_playground.main:app --host 0.0.0.0 --port {{ .Values.service.port.container }}
           ports:
             - containerPort: {{ .Values.service.port.container }}
               name: {{ .Values.service.port.name }}
