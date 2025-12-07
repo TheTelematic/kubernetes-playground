@@ -86,10 +86,12 @@ def blink_leds():
         time.sleep(1)
         if current_cpu_utilization_percentage < 30 and not timestamp_to_decrease_at:
             timestamp_to_decrease_at = datetime.now()
-            thread, event = blink_led(led_to_blink_on_decrease)
+            if led_to_blink_on_decrease:
+                thread, event = blink_led(led_to_blink_on_decrease)
         elif current_cpu_utilization_percentage > 90 and not timestamp_to_increase_at:
             timestamp_to_increase_at = datetime.now()
-            thread, event = blink_led(led_to_blink_on_increase)
+            if led_to_blink_on_increase:
+                thread, event = blink_led(led_to_blink_on_increase)
 
         elif timestamp_to_decrease_at and (datetime.now() - timestamp_to_decrease_at).total_seconds() > 60:
             if thread and event:
