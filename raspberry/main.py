@@ -1,3 +1,4 @@
+import pprint
 import time
 
 from gpiozero import LED
@@ -12,15 +13,23 @@ red_led = LED(22)
 
 
 config.load_kube_config(config_file="/etc/rancher/k3s/k3s.yaml")
-v1 = client.CoreV1Api()
+k8s_core = client.CoreV1Api()
+k8s_autoscaling = client.AutoscalingV1Api()
 
 
 def get_pods(label_selector: str, namespace: str = "default") -> int:
-    ret = v1.list_namespaced_pod(namespace, label_selector=label_selector)
-    return len(ret.items)
+    result = k8s_core.list_namespaced_pod(namespace, label_selector=label_selector)
+    return len(list(filter(lambda i: i.status.phase == "Running", result.items)))
+
+
+def get_hpa(name: str, namespace: str = "default") -> (int, int):
+    result = k8s_autoscaling.read_namespaced_horizontal_pod_autoscaler(name, namespace)
+    return result.spec.min_replicas, result.spec.max_replicas
 
 
 def blink_leds():
+    min_replicas, max_replicas = get_hpa("kubernetes-playground-api")
+    print(f"Min: {min_replicas} Max: {max_replicas}")
     leds = [
         blue_led,
         green_led_1,
