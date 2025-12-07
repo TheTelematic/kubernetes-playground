@@ -7,4 +7,4 @@ class QuickstartUser(HttpUser):
 
     @task
     def fibonacci(self):
-        self.client.get("/fibonacci", params={"n": random.randint(0, 10)})
+        self.client.get("/fibonacci", params={"n": random.randint(0, 50)})
