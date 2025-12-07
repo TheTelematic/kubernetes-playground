@@ -93,12 +93,13 @@ def blink_leds():
                     led_to_blink_on_increase = led
 
         time.sleep(1)
-        if (current_cpu_utilization_percentage < 10 or running_pods_percentage < 30) and not timestamp_to_decrease_at:
+        if current_cpu_utilization_percentage < 10 and not timestamp_to_decrease_at:
             print("Starting to decrease max pods...")
             timestamp_to_decrease_at = datetime.now()
             if led_to_blink_on_decrease:
                 thread, event = blink_led(led_to_blink_on_decrease)
-        elif (current_cpu_utilization_percentage > 90 or running_pods_percentage > 90) and not timestamp_to_increase_at:
+
+        elif current_cpu_utilization_percentage > 90 and not timestamp_to_increase_at:
             print("Starting to increase max pods...")
             timestamp_to_increase_at = datetime.now()
             if led_to_blink_on_increase:
@@ -111,6 +112,7 @@ def blink_leds():
                 event = None
             decrease_max_pods()
             timestamp_to_decrease_at = None
+
         elif timestamp_to_increase_at and (datetime.now() - timestamp_to_increase_at).total_seconds() > 5:
             if thread and event:
                 stop_blinking(thread, event)
