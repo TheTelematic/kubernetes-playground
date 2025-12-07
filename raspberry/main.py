@@ -17,7 +17,7 @@ k8s_core = client.CoreV1Api()
 k8s_autoscaling = client.AutoscalingV1Api()
 
 
-def get_pods(label_selector: str, namespace: str = "default") -> int:
+def get_pods_running(label_selector: str, namespace: str = "default") -> int:
     result = k8s_core.list_namespaced_pod(namespace, label_selector=label_selector)
     return len(list(filter(lambda i: i.status.phase == "Running", result.items)))
 
@@ -28,24 +28,24 @@ def get_hpa(name: str, namespace: str = "default") -> (int, int):
 
 
 def blink_leds():
-    min_replicas, max_replicas = get_hpa("kubernetes-playground-api")
-    print(f"Min: {min_replicas} Max: {max_replicas}")
-    leds = [
-        blue_led,
-        green_led_1,
-        green_led_2,
-        yellow_led,
-        red_led,
-    ]
-    previous_led = leds[0]
+    led_buckets = {
+        0: blue_led,
+        10: green_led_1,
+        25: green_led_2,
+        50: yellow_led,
+        80: red_led,
+    }
     while True:
-        for led in leds:
-            previous_led.off()
-            led.on()
-            n_pods = get_pods("app=kubernetes-playground-api")
-            print(f"{n_pods} pods running")
-            time.sleep(1)
-            previous_led = led
+        min_replicas, max_replicas = get_hpa("kubernetes-playground-api")
+        pods_running = get_pods_running("app=kubernetes-playground-api")
+        percentage = (pods_running / max_replicas) * 100
+        for bucket, led in led_buckets.items():
+            if percentage >= bucket:
+                led.on()
+            else:
+                led.off()
+
+        time.sleep(1)
 
 
 def main():
