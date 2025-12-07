@@ -12,7 +12,7 @@ build:
 	docker build -t ${image_name}:${image_tag} --target kubernetes_playground_${target} . --build-arg BUILD_TIMESTAMP=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 deploy-local:
-	helm upgrade --install --wait kubernetes-playground kubernetes/chart
+	helm upgrade --install --wait kubernetes-playground kubernetes/chart --set image.tag=${image_tag}
 
 undeploy:
 	-helm uninstall kubernetes-playground
@@ -22,5 +22,5 @@ check-chart:
 	helm lint kubernetes/chart
 
 publish:
-	docker tag ${image_name}:${image_tag} ${docker_hub_image_name}:latest
-	docker push ${docker_hub_image_name}:latest
+	docker tag ${image_name}:${image_tag} ${docker_hub_image_name}:${image_tag}
+	docker push ${docker_hub_image_name}:${image_tag}
