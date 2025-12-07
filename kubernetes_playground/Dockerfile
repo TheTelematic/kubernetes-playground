@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -U pip \
     && pip install -r requirements.txt \
     && rm requirements.txt
 
-FROM base_app AS kubenetes_playground_app
+FROM base_app AS kubernetes_playground_app
 
 COPY src/ .
 
@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -U pip \
 
 COPY pytest.ini .
 
-FROM base_tests AS kubenetes_playground_tests
+FROM base_tests AS kubernetes_playground_tests
 
 COPY src/ .
 COPY tests/ tests/

@@ -1,5 +1,5 @@
 image:
-  name: thetelematic95/raspberry_playground
+  name: thetelematic95/kubernetes_playground
   tag: latest
   policy: Always
 

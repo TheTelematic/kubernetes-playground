@@ -12,14 +12,12 @@ red_led = LED(22)
 
 
 config.load_kube_config(config_file="/etc/rancher/k3s/k3s.yaml")
+v1 = client.CoreV1Api()
 
 
-def list_pods():
-    v1 = client.CoreV1Api()
-    print("Listing pods with their IPs:")
-    ret = v1.list_namespaced_pod("default")
-    for i in ret.items:
-        print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+def get_pods(label_selector: str, namespace: str = "default") -> int:
+    ret = v1.list_namespaced_pod(namespace, label_selector=label_selector)
+    return len(ret.items)
 
 
 def blink_leds():
@@ -35,7 +33,8 @@ def blink_leds():
         for led in leds:
             previous_led.off()
             led.on()
-            list_pods()
+            n_pods = get_pods("app=kubernetes-playground-api")
+            print(f"{n_pods} pods running")
             time.sleep(1)
             previous_led = led
 
