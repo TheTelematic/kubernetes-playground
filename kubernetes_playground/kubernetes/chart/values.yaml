@@ -18,11 +18,11 @@ service:
   port:
     container: 8000
     name: http
-    exposed: 80
+    exposed: 8000
 
 ingress:
   enabled: true
-  ingressClassName: "nginx"
+  ingressClassName: "traefik"
   hostname: "raspberry.local"
 
 config:
