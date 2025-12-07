@@ -15,10 +15,17 @@ red_led = LED(22)
 
 NAMESPACE = "default"
 HPA_NAME = "kubernetes-playground-api"
+LABEL_SELECTOR = "app=kubernetes-playground-api"
+
 
 config.load_kube_config(config_file="/etc/rancher/k3s/k3s.yaml")
 k8s_core = client.CoreV1Api()
 k8s_autoscaling = client.AutoscalingV1Api()
+
+
+def get_pods_running(label_selector: str = LABEL_SELECTOR, namespace: str = NAMESPACE) -> int:
+    result = k8s_core.list_namespaced_pod(namespace, label_selector=label_selector)
+    return len(list(filter(lambda i: i.status.phase == "Running", result.items)))
 
 
 def get_hpa(name: str = HPA_NAME, namespace: str = NAMESPACE) -> (int, int, float):
@@ -28,14 +35,14 @@ def get_hpa(name: str = HPA_NAME, namespace: str = NAMESPACE) -> (int, int, floa
 
 def decrease_max_pods(name: str = HPA_NAME, namespace: str = NAMESPACE):
     print("Decreasing max pods...")
-    min_replicas, max_replicas, current_cpu_utilization_percentage = get_hpa()
+    min_replicas, max_replicas, _ = get_hpa()
     new_max_replicas = max(1, min_replicas, max_replicas - 1)
     k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(name, namespace, {"spec": {"maxReplicas": new_max_replicas}})
 
 
 def increase_max_pods(name: str = HPA_NAME, namespace: str = NAMESPACE):
     print("Increasing max pods...")
-    min_replicas, max_replicas, current_cpu_utilization_percentage = get_hpa()
+    min_replicas, max_replicas, _ = get_hpa()
     new_max_replicas = max(1, min_replicas, max_replicas + 1)
     k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(name, namespace, {"spec": {"maxReplicas": new_max_replicas}})
 
@@ -64,18 +71,20 @@ def blink_leds():
         (blue_led, 0),
         (green_led_1, 10),
         (green_led_2, 25),
-        (yellow_led, 50),
-        (red_led, 80),
+        (yellow_led, 60),
+        (red_led, 85),
     ]
     timestamp_to_decrease_at = None
     timestamp_to_increase_at = None
     thread, event = None, None
     while True:
-        min_replicas, max_replicas, current_cpu_utilization_percentage = get_hpa()
+        _, max_replicas, current_cpu_utilization_percentage = get_hpa()
         led_to_blink_on_decrease = None
         led_to_blink_on_increase = None
+        pods_running = get_pods_running()
+        running_pods_percentage = (pods_running / max_replicas) * 100
         for led, threshold in led_thresholds:
-            if current_cpu_utilization_percentage >= threshold:
+            if running_pods_percentage >= threshold:
                 led.on()
                 led_to_blink_on_decrease = led
             else:
@@ -84,11 +93,11 @@ def blink_leds():
                     led_to_blink_on_increase = led
 
         time.sleep(1)
-        if current_cpu_utilization_percentage < 30 and not timestamp_to_decrease_at:
+        if (current_cpu_utilization_percentage < 10) or (running_pods_percentage < 30) and not timestamp_to_decrease_at:
             timestamp_to_decrease_at = datetime.now()
             if led_to_blink_on_decrease:
                 thread, event = blink_led(led_to_blink_on_decrease)
-        elif current_cpu_utilization_percentage > 90 and not timestamp_to_increase_at:
+        elif current_cpu_utilization_percentage > 90 or (running_pods_percentage > 90) and not timestamp_to_increase_at:
             timestamp_to_increase_at = datetime.now()
             if led_to_blink_on_increase:
                 thread, event = blink_led(led_to_blink_on_increase)
