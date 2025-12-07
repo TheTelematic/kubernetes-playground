@@ -12,7 +12,7 @@ green_led_2 = LED(17)
 yellow_led = LED(27)
 red_led = LED(22)
 
-
+NAMESPACE = "default"
 HPA_NAME = "kubernetes-playground-api"
 LABEL_SELECTOR = "app=kubernetes-playground-api"
 
@@ -21,24 +21,29 @@ k8s_core = client.CoreV1Api()
 k8s_autoscaling = client.AutoscalingV1Api()
 
 
-def get_pods_running(label_selector: str = LABEL_SELECTOR, namespace: str = "default") -> int:
+def get_pods_running(label_selector: str = LABEL_SELECTOR, namespace: str = NAMESPACE) -> int:
     result = k8s_core.list_namespaced_pod(namespace, label_selector=label_selector)
     return len(list(filter(lambda i: i.status.phase == "Running", result.items)))
 
 
-def get_hpa(name: str = HPA_NAME, namespace: str = "default") -> (int, int):
+def get_hpa(name: str = HPA_NAME, namespace: str = NAMESPACE) -> (int, int):
     result = k8s_autoscaling.read_namespaced_horizontal_pod_autoscaler(name, namespace)
     return result.spec.min_replicas, result.spec.max_replicas
 
 
-def scale_down(name: str = HPA_NAME, namespace: str = "default"):
+def scale_down(name: str = HPA_NAME, namespace: str = NAMESPACE):
     print("Scaling down...")
-    k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(name, namespace, {"spec": {"min_replicas": 3, "max_replicas": 5}})
+    min_replicas, max_replicas = get_hpa()
+    new_max_replicas = max(1, min_replicas, max_replicas - 1)
+    k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(name, namespace, {"spec": {"maxReplicas": new_max_replicas}})
     print("Scaling down completed")
 
 
-def scale_up():
+def scale_up(name: str = HPA_NAME, namespace: str = NAMESPACE):
     print("Scaling up...")
+    min_replicas, max_replicas = get_hpa()
+    new_max_replicas = max(1, min_replicas, max_replicas + 1)
+    k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(name, namespace, {"spec": {"maxReplicas": new_max_replicas}})
     print("Scaling up completed")
 
 
@@ -68,14 +73,17 @@ def blink_leds():
         elif percentage > 90 and not candidate_to_scale_up_at:
             candidate_to_scale_up_at = datetime.now()
 
-        elif (datetime.now() - candidate_to_scale_down_at).total_seconds() > 60:
+        elif candidate_to_scale_down_at and (datetime.now() - candidate_to_scale_down_at).total_seconds() > 60:
             scale_down()
-        elif (datetime.now() - candidate_to_scale_up_at).total_seconds() > 60:
+            candidate_to_scale_down_at = None
+        elif candidate_to_scale_up_at and (datetime.now() - candidate_to_scale_up_at).total_seconds() > 60:
             scale_up()
+            candidate_to_scale_up_at = None
 
 
 def main():
     white_led.on()
+    k8s_autoscaling.patch_namespaced_horizontal_pod_autoscaler(HPA_NAME, NAMESPACE,{"spec": {"minReplicas": 1}})
     blink_leds()
 
 
