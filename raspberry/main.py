@@ -78,11 +78,11 @@ def blink_leds():
 
         time.sleep(1)
         if pods_running > desired_replicas:
-            if led_to_blink_on_decrease:
+            if not thread and not event and led_to_blink_on_decrease:
                 thread, event = blink_led(led_to_blink_on_decrease)
 
         elif pods_running < desired_replicas:
-            if led_to_blink_on_increase:
+            if not thread and not event and led_to_blink_on_increase:
                 thread, event = blink_led(led_to_blink_on_increase)
 
         else:
