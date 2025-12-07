@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kubernetes_playground
+version: 0.0.5
+keywords:
+  - pet project
+home: https://github.com/TheTelematic/kubernetes_playground
