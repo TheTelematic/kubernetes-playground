@@ -1,6 +1,7 @@
 import time
 
 from gpiozero import LED
+import kubernetes
 
 white_led = LED(2)
 blue_led = LED(3)
@@ -28,4 +29,8 @@ def main():
             previous_led = led
 
 if __name__ == '__main__':
-    main()
+    try:
+        print("Running...")
+        main()
+    except KeyboardInterrupt:
+        print("Exiting...")
