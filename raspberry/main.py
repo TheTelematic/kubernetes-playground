@@ -17,7 +17,7 @@ config.load_kube_config(config_file="/etc/rancher/k3s/k3s.yaml")
 def list_pods():
     v1 = client.CoreV1Api()
     print("Listing pods with their IPs:")
-    ret = v1.list_pod_for_all_namespaces(watch=False)
+    ret = v1.list_namespaced_pod("default")
     for i in ret.items:
         print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
 
@@ -36,6 +36,7 @@ def blink_leds():
             previous_led.off()
             led.on()
             list_pods()
+            time.sleep(1)
             previous_led = led
 
 
