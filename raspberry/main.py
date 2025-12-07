@@ -93,14 +93,14 @@ def blink_leds():
             if led_to_blink_on_increase:
                 thread, event = blink_led(led_to_blink_on_increase)
 
-        elif timestamp_to_decrease_at and (datetime.now() - timestamp_to_decrease_at).total_seconds() > 60:
+        elif timestamp_to_decrease_at and (datetime.now() - timestamp_to_decrease_at).total_seconds() > 15:
             if thread and event:
                 stop_blinking(thread, event)
                 thread = None
                 event = None
             decrease_max_pods()
             timestamp_to_decrease_at = None
-        elif timestamp_to_increase_at and (datetime.now() - timestamp_to_increase_at).total_seconds() > 60:
+        elif timestamp_to_increase_at and (datetime.now() - timestamp_to_increase_at).total_seconds() > 15:
             if thread and event:
                 stop_blinking(thread, event)
                 thread = None
